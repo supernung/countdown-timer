@@ -1,0 +1,45 @@
+name: Build Countdown Timer
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:   # bisa dijalankan manual dari tab Actions
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+          - os: macos-latest
+            name: macos
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+
+      - name: Clone Resolume FFGL SDK
+        run: git clone --depth 1 https://github.com/resolume/ffgl.git ffgl-sdk
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DFFGL_SDK_DIR=ffgl-sdk
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Tampilkan hasil build
+        run: ls -la build/out
+
+      - name: Upload plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: CountdownTimer-${{ matrix.name }}
+          path: build/out/*
+          if-no-files-found: error
